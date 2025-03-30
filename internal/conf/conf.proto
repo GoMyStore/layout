@@ -1,0 +1,101 @@
+syntax = "proto3";
+package kratos.api;
+
+option go_package = "server/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+message Bootstrap {
+  Server server = 1;
+  Data data = 2;
+  AppMetadata metadata = 3;
+  Otel otel = 4;
+  Log log = 5;
+}
+
+message AppMetadata {
+  enum Environment{
+    NONE = 0;
+    DEV = 1;
+    STAGE = 2;
+    PROD = 3;
+  }
+  string name = 1;
+  Environment env = 2;
+}
+
+message Otel{
+  message Trace{
+    string endpoint = 1;
+    bool insecure = 2;
+  }
+  message Metrics{
+    bool enable_exemplar = 1;
+  }
+
+  Trace trace = 1;
+  Metrics metrics = 2;
+}
+
+message Log{
+  enum Logger {
+    ZAP = 0;
+    LOGRUS = 1;
+  }
+  string level = 1;
+  string filepath = 2;
+  string logger = 3;
+}
+
+message Server {
+  message HTTP {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+    message CORS {
+      bool enabled = 1;
+      repeated string allow_origins = 2;
+      repeated string allow_methods = 3;
+      repeated string allow_headers = 4;
+      bool allow_credentials = 5;
+    }
+    CORS cors = 4;
+  }
+  message GRPC {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration timeout = 3;
+  }
+  HTTP http = 1;
+  GRPC grpc = 2;
+}
+
+message Data {
+  message Database {
+    string driver = 1;
+    string source = 2;
+  }
+  message Redis {
+    string network = 1;
+    string addr = 2;
+    google.protobuf.Duration read_timeout = 3;
+    google.protobuf.Duration write_timeout = 4;
+  }
+  message Mongo{
+    string uri = 1;
+    string username = 2;
+    string password = 3;
+    string database = 4;
+  }
+  message Surreal {
+    string addr = 1;
+    string database = 2;
+    string namespace = 3;
+    string username = 4;
+    string password = 5;
+  }
+  Database database = 1;
+  Redis redis = 2;
+  Mongo mongo = 3;
+  Surreal surreal = 4;
+}
