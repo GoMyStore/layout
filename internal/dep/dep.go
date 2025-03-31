@@ -10,4 +10,5 @@ var DepProviderSet = wire.NewSet(
 	NewTracer,
 	NewTracerProvider,
 	NewTextMapPropagator,
+	NewNats,
 )

@@ -94,8 +94,14 @@ message Data {
     string username = 4;
     string password = 5;
   }
+	message Nats {
+		string addr = 1;
+		string username = 2;
+		string password = 3;
+	}
   Database database = 1;
   Redis redis = 2;
   Mongo mongo = 3;
   Surreal surreal = 4;
+	Nats nats = 5;
 }

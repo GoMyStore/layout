@@ -40,6 +40,10 @@ data:
     namespace: test
     username: root
     password: root
+    nats:
+      addr: nats://localhost:4222
+      username: root
+      password: root
 metadata:
   name: server
   env: dev
@@ -54,4 +58,3 @@ log:
   logger: zap
   level: debug
   filepath: ""
-
