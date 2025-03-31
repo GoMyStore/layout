@@ -95,9 +95,10 @@ message Data {
     string password = 5;
   }
 	message Nats {
-		string addr = 1;
-		string username = 2;
-		string password = 3;
+		bool jetstream = 1;
+		string addr = 2;
+		string username = 3;
+		string password = 4;
 	}
   Database database = 1;
   Redis redis = 2;
