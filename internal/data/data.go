@@ -45,7 +45,7 @@ func NewData(c *conf.Data, logger log.Logger, tp trace.TracerProvider) (*Data, f
 		noDB = false
 	}
 
-	if c.Mongo.Uri != "" && c.Mongo.Database != "" && c.Mongo.Username != "" && c.Mongo.Password != "" {
+	if c.GetMongo().GetUri() != "" && c.GetMongo().GetDatabase() != "" && c.GetMongo().GetUsername() != "" && c.GetMongo().GetPassword() != "" {
 		m, mongoClean, err = dep.NewMongo(c, logger)
 		if err != nil {
 			lg.Warn("failed to connect to MongoDB", err)
@@ -54,7 +54,7 @@ func NewData(c *conf.Data, logger log.Logger, tp trace.TracerProvider) (*Data, f
 		noDB = false
 	}
 
-	if c.Surreal.Addr != "" && c.Surreal.Database != "" && c.Surreal.Namespace != "" && c.Surreal.Username != "" && c.Surreal.Password != "" {
+	if c.GetSurreal().GetAddr() != "" && c.GetSurreal().GetDatabase() != "" && c.GetSurreal().GetNamespace() != "" && c.GetSurreal().GetUsername() != "" && c.GetSurreal().GetPassword() != "" {
 		s, surrealClean, err = dep.NewSurreal(c, logger)
 		if err != nil {
 			lg.Warn("failed to connect to SurrealDB", err)
