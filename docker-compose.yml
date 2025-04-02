@@ -3,7 +3,7 @@ version: "3.8"
 services:
   pg:
     image: postgres:16.6-alpine3.21
-    container_name: qwizler-postgres
+    container_name: gms-postgres
     ports:
       - 5432:5432
     environment:
@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: users
   mongo:
     image: mongo:7.0
-    container_name: qwizler-mongodb
+    container_name: gms-mongodb
     ports:
       - 27017:27017
     environment:
