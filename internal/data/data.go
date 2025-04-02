@@ -36,7 +36,7 @@ func NewData(c *conf.Data, logger log.Logger, tp trace.TracerProvider) (*Data, f
 	var err error
 	noDB := true
 
-	if c.Database.Source != "" && c.Database.Driver != "" {
+	if c.GetDatabase() != nil && c.GetDatabase().Source != "" && c.Database.GetDriver() != "" {
 		g, _, err = dep.NewGorm(c, logger, tp)
 		if err != nil {
 			lg.Warn("failed to connect to PostgreSQL", err)

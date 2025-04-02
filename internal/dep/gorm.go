@@ -64,13 +64,18 @@ func openDB(ctx context.Context, c *conf.Data, tp trace.TracerProvider) (*gorm.D
 }
 
 func NewGorm(c *conf.Data, logger log.Logger, tp trace.TracerProvider) (*Gorm, func(), error) {
+	lg := log.NewHelper(logger)
+	if c.GetDatabase() == nil || c.GetDatabase().GetSource() == "" {
+		lg.Warn("No Database configuration found, skipping gorm initialization")
+		return nil, nil, nil
+	}
 	db, err := openDB(context.Background(), c, tp)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	cleanup := func() {
-		log.NewHelper(logger).Info("closing gorm data resources")
+		lg.Info("closing gorm data resources")
 	}
 
 	return &Gorm{
