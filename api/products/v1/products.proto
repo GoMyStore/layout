@@ -6,41 +6,33 @@ import "google/api/annotations.proto";
 
 option go_package = "server/api/products/v1;v1";
 option java_multiple_files = true;
-option java_package = "dev.kratos.api.products.v1";
 option java_outer_classname = "ProductsProtoV1";
+option java_package = "dev.kratos.api.products.v1";
 
 service Products {
-  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse) {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {
     option (google.api.http) = {
       post: "/products"
       body: "*"
     };
   }
-  rpc GetProduct (GetProductRequest) returns (GetProductResponse) {
-    option (google.api.http) = {
-      get: "/products/{id}"
-    };
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {
+    option (google.api.http) = {get: "/products/{id}"};
   }
-  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse) {
-    option (google.api.http) = {
-      get: "/products"
-    };
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+    option (google.api.http) = {get: "/products"};
   }
-  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse) {
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {
     option (google.api.http) = {
       patch: "/products/{id}"
       body: "*"
     };
   }
-  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse) {
-    option (google.api.http) = {
-      delete: "/products/{id}"
-    };
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse) {
+    option (google.api.http) = {delete: "/products/{id}"};
   }
-  rpc SearchProducts (SearchProductsRequest) returns (SearchProductsResponse) {
-    option (google.api.http) = {
-      get: "/products/search"
-    };
+  rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse) {
+    option (google.api.http) = {get: "/products/search"};
   }
 }
 
@@ -80,7 +72,7 @@ message GetProductRequest {
   string id = 1;
 }
 
-message GetProductResponse  {
+message GetProductResponse {
   Product product = 1;
 }
 

@@ -2,6 +2,7 @@ package dep
 
 import (
 	"context"
+	"time"
 
 	"layout/internal/conf"
 
@@ -13,10 +14,12 @@ import (
 )
 
 type Nats struct {
-	Conn   *nats.Conn
-	JS     jetstream.JetStream
-	Logger *log.Helper
-	tp     trace.Tracer
+	UsesJS  bool
+	Conn    *nats.Conn
+	JS      jetstream.JetStream
+	Logger  *log.Helper
+	tp      trace.Tracer
+	Cleanup func()
 }
 
 func NewNats(c *conf.Bootstrap, logger log.Logger, tp trace.TracerProvider) (*Nats, error) {
@@ -24,41 +27,50 @@ func NewNats(c *conf.Bootstrap, logger log.Logger, tp trace.TracerProvider) (*Na
 	log := log.NewHelper(logger)
 	var conn *nats.Conn
 
-	conn, err := connect(c, log, t, context.Background())
+	conn, clean, err := connect(c, log, t, context.Background())
 	if err != nil {
 		return nil, err
 	}
 
 	nats := Nats{
-		Logger: log,
-		tp:     t,
-		Conn:   conn,
+		UsesJS:  false,
+		Logger:  log,
+		tp:      t,
+		Conn:    conn,
+		Cleanup: clean,
 	}
 
-	if c.GetData().GetNats().GetJetstream() {
-		js, err := nats.connectJS(c)
+	usesJS := c.GetData().GetNats().GetJetstream()
+
+	if usesJS {
+		js, clean, err := nats.connectJS(c)
 		if err != nil {
 			return nil, err
 		}
 		return &Nats{
-			Logger: log,
-			tp:     t,
-			Conn:   conn,
-			JS:     js,
+			UsesJS:  usesJS,
+			Logger:  log,
+			tp:      t,
+			Conn:    conn,
+			JS:      js,
+			Cleanup: clean,
 		}, nil
 	}
 
 	return &nats, nil
 }
 
-func connect(c *conf.Bootstrap, log *log.Helper, t trace.Tracer, ctx context.Context) (*nats.Conn, error) {
+func connect(c *conf.Bootstrap, log *log.Helper, t trace.Tracer, ctx context.Context) (*nats.Conn, func(), error) {
 	ctx, span := t.Start(ctx, "dep.Nats.conn")
 	defer span.End()
+
 	addr := nats.DefaultURL
+
 	if c.GetData().GetNats().GetAddr() == "" {
-		return nil, errors.InternalServer("No nats address provided", "No data.nats.addr was set in the config")
+		log.Warn("No data.nats.addr was set in the config, using default")
+	} else {
+		addr = c.GetData().GetNats().GetAddr()
 	}
-	addr = c.GetData().GetNats().GetAddr()
 
 	name := "unnamed"
 	if c.GetMetadata().GetName() != "" {
@@ -66,35 +78,58 @@ func connect(c *conf.Bootstrap, log *log.Helper, t trace.Tracer, ctx context.Con
 	}
 	opts := []nats.Option{
 		nats.Name(name),
+		nats.MaxReconnects(-1), // Unlimited reconn
+		nats.ReconnectWait(time.Second * 5),
+		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+			log.Errorf("NATS disconnected: %v", err)
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			log.Infof("NATS reconnected to %s", nc.ConnectedUrl())
+		}),
 	}
+
+	cleanup := func() {}
 
 	nc, err := nats.Connect(addr, opts...)
 	if err != nil {
-		return nil, err
+		log.Errorf("failed to connect to NATS at %s: %v", addr, err)
+		return nil, cleanup, errors.InternalServer("failed to connect to NATS", err.Error())
 	}
-	defer nc.Close()
 
-	return nc, nil
+	cleanup = func() {
+		if nc != nil {
+			nc.Close()
+		}
+	}
+
+	return nc, cleanup, nil
 }
 
-func (n *Nats) connectJS(c *conf.Bootstrap) (jetstream.JetStream, error) {
+func (n *Nats) connectJS(c *conf.Bootstrap) (jetstream.JetStream, func(), error) {
 	ctx, span := n.tp.Start(context.Background(), "dep.Nats.connJS")
 	defer span.End()
 
+	cleanup := func() {}
 	var conn *nats.Conn = n.Conn
 	var err error
 
 	if conn == nil {
-		conn, err = connect(c, n.Logger, n.tp, ctx)
+		conn, _, err = connect(c, n.Logger, n.tp, ctx)
 		if err != nil {
-			return nil, err
+			return nil, cleanup, err
 		}
 	}
 
 	js, err := jetstream.New(conn)
 	if err != nil {
-		return nil, err
+		return nil, cleanup, err
 	}
 
-	return js, nil
+	cleanup = func() {
+		if js.Conn() != nil {
+			js.Conn().Close()
+		}
+	}
+
+	return js, cleanup, nil
 }
